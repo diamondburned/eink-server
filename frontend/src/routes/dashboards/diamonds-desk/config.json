@@ -1,0 +1,31 @@
+{
+  "width": 800,
+  "height": 480,
+  "password": {
+    "_file": "secrets/diamonds-desk-password",
+    "_default": null
+  },
+  "icsURL": {
+    "_file": "secrets/personal-calendar-ics-url"
+  },
+  "homeAssistant": {
+    "endpoint": "https://ha.d14.place",
+    "token": {
+      "_file": "secrets/home-assistant-token"
+    },
+    "weather": "weather.forecast_home",
+    "calendars": [
+      "calendar.diamond",
+      "calendar.diamondburned_google_com",
+      "calendar.holidays_in_united_states",
+      "calendar.birthdays"
+    ]
+  },
+  "timeline": {
+    "startHours": -4,
+    "endHours": 8,
+    "pixelsPerHour": 40
+  },
+  "showMinutes": "quarterly",
+  "show24HourTime": true
+}

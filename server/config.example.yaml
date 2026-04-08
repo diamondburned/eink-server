@@ -1,0 +1,30 @@
+dataDir: /tmp/eink-server
+defaultRefreshTime: 5m
+dashboards:
+  - id: diamonds-desk
+    url: http://localhost:5173/dashboards/diamonds-desk
+    width: 800
+    height: 480
+    refreshTime: 1m
+    pageLoadDelay: 3s
+    cssFilter: |
+      grayscale(1)
+    # cssExtras: |
+    #   * {
+    #     image-rendering: pixelated !important;
+    #     font-smooth: never !important;
+    #     -webkit-font-smoothing: never !important;
+    #   }
+    imageFormat: png
+    imageScale: 1
+    postprocessing:
+      dithering:
+        # Use 4 colors when ESPHome improves its e-ink support:
+        # https://github.com/esphome/feature-requests/issues/3035
+        # colors: 4
+        # algorithm: none
+        colors: 2
+        algorithm: none
+        # algorithm: floyd-steinberg
+webServer:
+  listenAddress: 0.0.0.0:5100
