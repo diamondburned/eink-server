@@ -36,7 +36,7 @@
             ];
 
             shellHook = ''
-              export PATH="$PATH:$(git rev-parse --show-toplevel)/frontend/node_modules/.bin"
+              export PATH="$PATH:$(git rev-parse --show-toplevel)/node_modules/.bin"
               pnpm install --frozen-lockfile
             '';
 
