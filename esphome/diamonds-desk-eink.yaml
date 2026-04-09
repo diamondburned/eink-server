@@ -59,7 +59,7 @@ http_request:
 globals:
   - id: failing
     type: bool
-    restore_value: no
+    restore_value: true
     initial_value: "true"
 
 online_image:
