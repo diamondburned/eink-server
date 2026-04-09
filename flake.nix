@@ -17,26 +17,31 @@
       systems = [
         "x86_64-linux"
         "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
       ];
 
       perSystem =
         {
-          config,
-          self',
-          inputs',
           pkgs,
-          system,
+          lib,
           ...
         }:
         {
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [
               chromium
-              deno
               nodejs
+              pnpm
+              esbuild
+              esphome
             ];
+
+            shellHook = ''
+              export PATH="$PATH:$(git rev-parse --show-toplevel)/frontend/node_modules/.bin"
+              pnpm install --frozen-lockfile
+            '';
+
+            # Lock this to package.json.
+            ESBUILD_BINARY_PATH = "${lib.getExe pkgs.esbuild}";
           };
         };
     };

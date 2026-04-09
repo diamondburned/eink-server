@@ -3,9 +3,6 @@ secrets/*
 
 node_modules
 
-# pnpm
-pnpm-lock.yaml
-
 # Output
 .output
 .vercel
