@@ -5,7 +5,7 @@
   "screenshot": {
     "pageLoadDelaySec": 1,
     "dithering": {
-      "algorithm": "floyd-steinberg",
+      "algorithm": "none",
       "colors": 2
     }
   },
