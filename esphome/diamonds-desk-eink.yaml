@@ -16,6 +16,11 @@ esp32:
     type: esp-idf
   flash_size: 16MB
 
+substitutions:
+  dashboard_url: "http://mizuki.lan:5100/dashboards/diamonds-desk/screenshot.png"
+  refresh_interval: "5min"
+  redraw_every_refreshes: 3 # every 15 minutes for a 5-minute refresh interval
+
 # Useful references:
 # https://github.com/esphome/feature-requests/issues/3035
 # https://wiki.seeedstudio.com/reterminal_e10xx_with_esphome_advanced/#buzzer-control
@@ -39,6 +44,10 @@ api:
 
 logger:
 
+deep_sleep:
+  run_duration: 30s
+  sleep_duration: ${refresh_interval}
+
 web_server:
   log: true
 
@@ -55,13 +64,13 @@ globals:
 
 online_image:
   - id: dashboard_image
-    url: http://mizuki.lan:5100/dashboards/diamonds-desk/screenshot.png
+    url: ${dashboard_url}
     # type: GRAYSCALE
     type: BINARY
     format: PNG
     buffer_size: 16384 # 16KiB
     placeholder: error_image
-    update_interval: 5min
+    update_interval: ${refresh_interval}
     on_download_finished:
       then:
         - globals.set:
@@ -121,7 +130,7 @@ script:
 display:
   - platform: waveshare_epaper
     id: epaper_display
-    model: 7.50inv2alt
+    model: 7.50inv2p
     cs_pin: GPIO10
     dc_pin: GPIO11
     reset_pin:
@@ -130,6 +139,7 @@ display:
     busy_pin:
       number: GPIO13
       inverted: true
+    full_update_every: ${redraw_every_refreshes}
     lambda: |-
       it.image(
         0, 0,
