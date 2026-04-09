@@ -31,6 +31,8 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   on_connect:
+    - component.update: epaper_display
+    - delay: 3s
     - component.update: dashboard_image
 
 api:
@@ -42,12 +44,18 @@ web_server:
 
 http_request:
   verify_ssl: false
-  timeout: 20s
-  watchdog_timeout: 25s
+  timeout: 45s
+  watchdog_timeout: 60s
+
+globals:
+  - id: failing
+    type: bool
+    restore_value: no
+    initial_value: "true"
 
 online_image:
   - id: dashboard_image
-    url: http://mizuki.lan:5100/dashboards/diamonds-desk.png
+    url: http://mizuki.lan:5100/dashboards/diamonds-desk/screenshot.png
     # type: GRAYSCALE
     type: BINARY
     format: PNG
@@ -55,7 +63,17 @@ online_image:
     placeholder: error_image
     update_interval: 5min
     on_download_finished:
-      component.update: epaper_display
+      then:
+        - globals.set:
+            id: failing
+            value: "false"
+        - component.update: epaper_display
+    on_error:
+      then:
+        - globals.set:
+            id: failing
+            value: "true"
+        - component.update: epaper_display
 
 image:
   - id: error_image
@@ -76,18 +94,18 @@ script:
     then:
       - light.turn_on:
           id: buzzer
-          brightness: 50%
-      - delay: 100ms
+          brightness: 30%
+      - delay: 80ms
       - light.turn_off:
           id: buzzer
 
   - id: led_on
-    mode: single
+    mode: queued
     then:
       - light.turn_on: onboard_led
 
   - id: led_off
-    mode: single
+    mode: queued
     then:
       - light.turn_off: onboard_led
 
@@ -96,6 +114,7 @@ script:
     then:
       - script.execute: led_on
       - component.update: dashboard_image
+      - delay: 200ms
       - script.execute: led_off
       - script.execute: buzz_shortly
 
@@ -112,7 +131,11 @@ display:
       number: GPIO13
       inverted: true
     lambda: |-
-      it.image(0, 0, id(dashboard_image), COLOR_OFF, COLOR_ON);
+      it.image(
+        0, 0,
+        id(failing) ? id(error_image) : id(dashboard_image),
+        COLOR_OFF, COLOR_ON
+      );
     update_interval: never # unless triggered via on_download_finished
 
 button:
