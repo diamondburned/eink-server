@@ -3,11 +3,9 @@
   "height": 480,
   "password": null,
   "screenshot": {
-    "cachedDurationSec": 60,
-    "pageLoadDelaySec": 3,
-    "cssFilter": "grayscale(1)",
+    "pageLoadDelaySec": 1,
     "dithering": {
-      "algorithm": "none",
+      "algorithm": "floyd-steinberg",
       "colors": 2
     }
   },

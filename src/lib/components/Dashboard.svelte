@@ -58,6 +58,7 @@
     overflow: hidden;
     outline: 1px solid black;
     paint-order: stroke fill;
+    filter: greyscale(1);
 
     /* Force a text outline on all text for better 1-bit rendering. */
     -webkit-text-stroke: 0.2px black;
@@ -68,6 +69,8 @@
 
     height: var(--height);
     max-height: var(--height);
+
+    position: relative;
   }
 
   /* Remove any transitions/animations for e-ink */

@@ -128,10 +128,12 @@ export const load: PageServerLoad = async (ev) => {
       (e) => e.entity_id === config.homeAssistant.selfBatteryEntity,
     );
     assertEntityFound(config.homeAssistant.selfBatteryEntity, batteryEntity);
-    console.log("Battery entity found:", batteryEntity);
+    const level = parseFloat(batteryEntity.state);
+    if (!isNaN(level)) {
+      data.batteryLevel = level;
+    }
   }
 
-  console.log(data);
   return data;
 };
 

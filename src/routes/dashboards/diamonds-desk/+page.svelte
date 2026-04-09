@@ -2,14 +2,20 @@
   import type { PageData } from "./$types";
   import Dashboard from "$lib/components/Dashboard.svelte";
   import { onMount } from "svelte";
-  import { mdiWeatherWindy, mdiWeatherPouring, mdiWaterPercent } from "@mdi/js";
   import { formatWeatherCondition, getWeatherIconSVG } from "$lib/homeAssistant";
   import {
     generateTimelineHours,
     generateTimelineEvents,
     getTodayAllDayEvents,
   } from "$lib/calendar";
-  import { formatTime, formatDuration, formatDayName, getEventDayInfo } from "./lib";
+  import {
+    formatTime,
+    formatDuration,
+    formatDayName,
+    getEventDayInfo,
+    batteryLevelSVG,
+  } from "./lib";
+  import { mdiWeatherWindy, mdiWeatherPouring, mdiWaterPercent } from "@mdi/js";
 
   // Fix web components importing.
   // https://stackoverflow.com/a/74541536
@@ -270,6 +276,14 @@
         </div>
       </section>
     </div>
+
+    {#if data.batteryLevel}
+      <div class="battery-status">
+        <svg-icon class="icon" type="mdi" path={batteryLevelSVG(data.batteryLevel)} size="20">
+        </svg-icon>
+        <span class="text">{data.batteryLevel}%</span>
+      </div>
+    {/if}
   </div>
 </Dashboard>
 
@@ -579,6 +593,24 @@
           display: none;
         }
       }
+    }
+  }
+
+  .battery-status {
+    position: absolute;
+    bottom: 0.25em;
+    right: 0.25em;
+
+    display: flex;
+    align-items: center;
+    gap: 0.2em;
+
+    .icon {
+      transform: rotate(90deg);
+    }
+
+    .text {
+      font-size: 0.8em;
     }
   }
 </style>
