@@ -281,7 +281,7 @@
       <div class="battery-status">
         <svg-icon class="icon" type="mdi" path={batteryLevelSVG(data.batteryLevel)} size="20">
         </svg-icon>
-        <span class="text">{data.batteryLevel}%</span>
+        <span class="text">{Math.round(data.batteryLevel)}%</span>
       </div>
     {/if}
   </div>
