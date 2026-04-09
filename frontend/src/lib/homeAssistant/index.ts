@@ -83,6 +83,14 @@ export class HomeAssistantClient {
     return response.json();
   }
 
+  async callServiceWithResponse<T = Record<string, unknown>>(
+    domain: string,
+    service: string,
+    serviceData: Record<string, unknown> | undefined,
+  ): Promise<ServiceCallResponse<T>> {
+    return this.callService(domain, service, serviceData, { returnResponse: true });
+  }
+
   private async request<T>(endpoint: string): Promise<T> {
     const response = await ky
       .get(`${this.baseURL}${endpoint}`, {

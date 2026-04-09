@@ -1,12 +1,15 @@
 {
   "width": 800,
   "height": 480,
-  "password": {
-    "_file": "secrets/diamonds-desk-password",
-    "_default": null
-  },
-  "icsURL": {
-    "_file": "secrets/personal-calendar-ics-url"
+  "password": null,
+  "screenshot": {
+    "cachedDurationSec": 60,
+    "pageLoadDelaySec": 3,
+    "cssFilter": "grayscale(1)",
+    "dithering": {
+      "algorithm": "none",
+      "colors": 2
+    }
   },
   "homeAssistant": {
     "endpoint": "https://ha.d14.place",
@@ -19,7 +22,8 @@
       "calendar.diamondburned_google_com",
       "calendar.holidays_in_united_states",
       "calendar.birthdays"
-    ]
+    ],
+    "selfBatteryEntity": "sensor.diamond_s_desk_e_ink_dashboard_battery_level"
   },
   "timeline": {
     "startHours": -4,

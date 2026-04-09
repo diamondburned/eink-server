@@ -19,7 +19,9 @@
   "dependencies": {
     "@jamescoyle/svg-icon": "^1.0.0",
     "@mdi/js": "^7.4.47",
-    "hono": "^4.7.11"
+    "hono": "^4.7.11",
+    "playwright-core": "^1.52.0",
+    "sharp": "^0.34.2"
   },
   "devDependencies": {
     "@sveltejs/adapter-auto": "^6.0.0",

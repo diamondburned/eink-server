@@ -56,9 +56,10 @@
     const hourCount = hours.length - 1; // Number of hour spans
 
     return {
-      allDayEvents: getTodayAllDayEvents(now, data.events),
       hours,
-      events: generateTimelineEvents(roundedStart, roundedEnd, data.events),
+      // TODO: render partial error bars:
+      events: generateTimelineEvents(roundedStart, roundedEnd, data.events ?? []),
+      allDayEvents: getTodayAllDayEvents(now, data.events ?? []),
       currentTimePercent: (currentOffset / duration) * 100,
       timelineHeight: hourCount * data.config.timeline.pixelsPerHour,
     };
@@ -93,81 +94,89 @@
       </section>
 
       <section class="weather-section">
-        <div class="weather-header">
-          <svg-icon
-            class="weather-icon"
-            type="mdi"
-            path={getWeatherIconSVG(data.weather.condition)}
-            size="72"
-          ></svg-icon>
-          <div class="weather-info">
-            <div class="temperature">
-              {#if data.weather.temperature !== undefined}
-                {Math.round(data.weather.temperature)}<span class="unit"
-                  >{data.weather.temperatureUnit}</span
-                >
-              {:else}
-                <span class="empty">NaN</span>
-              {/if}
-            </div>
-            <div class="condition">
-              {formatWeatherCondition(data.weather.condition)}
-            </div>
-          </div>
-        </div>
-
-        <div class="weather-details">
-          {#if data.weather.precipitationUnit !== undefined}
-            <div class="detail">
-              <svg-icon type="mdi" path={mdiWeatherPouring}></svg-icon>
-              <span class="value">
-                {data.weather.precipitation ?? 0}<span class="unit"
-                  >{data.weather.precipitationUnit}</span
-                >
-              </span>
-            </div>
-          {/if}
-          {#if data.weather.humidity !== undefined}
-            <div class="detail">
-              <svg-icon type="mdi" path={mdiWaterPercent}></svg-icon>
-              <span class="value">{data.weather.humidity}<span class="unit">%</span></span>
-            </div>
-          {/if}
-          {#if data.weather.windSpeedUnit !== undefined}
-            <div class="detail">
-              <svg-icon type="mdi" path={mdiWeatherWindy}></svg-icon>
-              <span class="value">
-                {Math.round(data.weather.windSpeed ?? 0)}<span class="unit"
-                  >{data.weather.windSpeedUnit}</span
-                >
-              </span>
-            </div>
-          {/if}
-        </div>
-
-        <div class="weather-forecast">
-          {#each data.weather.forecastDaily.slice(0, 5) as day}
-            <div class="forecast-day">
-              <div class="forecast-day-name">{formatDayName(day.datetime, currentTime())}</div>
-              <svg-icon
-                class="forecast-icon"
-                type="mdi"
-                path={getWeatherIconSVG(day.condition ?? "")}
-                size="28"
-              ></svg-icon>
-              <div class="forecast-temps">
-                <span class="forecast-high">
-                  {day.temperature !== undefined ? Math.round(day.temperature) : "—"}°
-                </span>
-                {#if day.templow !== undefined}
-                  <span class="forecast-low">
-                    {Math.round(day.templow)}°
-                  </span>
+        {#if data.weather}
+          <div class="weather-header">
+            <svg-icon
+              class="weather-icon"
+              type="mdi"
+              path={getWeatherIconSVG(data.weather.condition)}
+              size="72"
+            ></svg-icon>
+            <div class="weather-info">
+              <div class="temperature">
+                {#if data.weather.temperature !== undefined}
+                  {Math.round(data.weather.temperature)}<span class="unit"
+                    >{data.weather.temperature_unit}</span
+                  >
+                {:else}
+                  <span class="empty">NaN</span>
                 {/if}
               </div>
+              <div class="condition">
+                {formatWeatherCondition(data.weather.condition)}
+              </div>
             </div>
-          {/each}
-        </div>
+          </div>
+
+          <div class="weather-details">
+            {#if data.weather.precipitation_unit !== undefined}
+              <div class="detail">
+                <svg-icon type="mdi" path={mdiWeatherPouring}></svg-icon>
+                <span class="value">
+                  {data.weather.precipitation ?? 0}<span class="unit"
+                    >{data.weather.precipitation_unit}</span
+                  >
+                </span>
+              </div>
+            {/if}
+            {#if data.weather.humidity !== undefined}
+              <div class="detail">
+                <svg-icon type="mdi" path={mdiWaterPercent}></svg-icon>
+                <span class="value">{data.weather.humidity}<span class="unit">%</span></span>
+              </div>
+            {/if}
+            {#if data.weather.wind_speed_unit !== undefined}
+              <div class="detail">
+                <svg-icon type="mdi" path={mdiWeatherWindy}></svg-icon>
+                <span class="value">
+                  {Math.round(data.weather.wind_speed ?? 0)}<span class="unit"
+                    >{data.weather.wind_speed_unit}</span
+                  >
+                </span>
+              </div>
+            {/if}
+          </div>
+
+          <div class="weather-forecast">
+            {#if data.weather.forecastDaily}
+              {#each data.weather.forecastDaily.slice(0, 5) as day}
+                <div class="forecast-day">
+                  <div class="forecast-day-name">{formatDayName(day.datetime, currentTime())}</div>
+                  <svg-icon
+                    class="forecast-icon"
+                    type="mdi"
+                    path={getWeatherIconSVG(day.condition ?? "")}
+                    size="28"
+                  ></svg-icon>
+                  <div class="forecast-temps">
+                    <span class="forecast-high">
+                      {day.temperature !== undefined ? Math.round(day.temperature) : "—"}°
+                    </span>
+                    {#if day.templow !== undefined}
+                      <span class="forecast-low">
+                        {Math.round(day.templow)}°
+                      </span>
+                    {/if}
+                  </div>
+                </div>
+              {/each}
+            {:else}
+              <div class="empty">No forecast data</div>
+            {/if}
+          </div>
+        {:else}
+          <div class="empty">No weather data</div>
+        {/if}
       </section>
     </div>
 
@@ -297,8 +306,9 @@
 
         :global(.hidden-minutes),
         :global(.quarterly-minutes) {
-          color: transparent;
-          -webkit-text-stroke: 2.5px black;
+          color: white;
+          paint-order: stroke fill;
+          -webkit-text-stroke: 6px black;
         }
       }
     }

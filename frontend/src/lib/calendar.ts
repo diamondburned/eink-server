@@ -29,21 +29,24 @@ export function parseCalendarEvents(
   haEvents: HACalendarEvent[],
   { placeholderSummary = "busy" }: { placeholderSummary?: string | null } = {},
 ): CalendarEvent[] {
-  const events: CalendarEvent[] = haEvents.map((event) => {
-    return {
-      summary: event.summary || placeholderSummary,
-      start: parseHADate(event.start),
-      end: parseHADate(event.end),
-      description: event.description,
-      // Home Assistant uses either dateTime or date for all-day events:
-      isAllDay: !!event.start.date,
-    };
-  });
-
-  // Sort events by start time
+  const events: CalendarEvent[] = haEvents.map((e) => parseCalendarEvent(e, placeholderSummary));
   events.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
-
   return events;
+}
+
+function parseCalendarEvent(
+  haEvent: HACalendarEvent,
+  placeholderSummary: string | null,
+): CalendarEvent {
+  const start = parseHADate(haEvent.start);
+  const end = parseHADate(haEvent.end);
+  return {
+    summary: haEvent.summary || placeholderSummary,
+    start,
+    end,
+    description: haEvent.description,
+    isAllDay: !!haEvent.start.date || start.getDate() != end.getDate(),
+  };
 }
 
 function parseHADate(date: { dateTime?: string; date?: string }): Date {
@@ -201,8 +204,6 @@ export function generateTimelineEvents(
     const offsetPercent = ((visibleStart - timelineStartMs) / timelineDuration) * 100;
     const heightPercent = ((visibleEnd - visibleStart) / timelineDuration) * 100;
 
-    console.log(event);
-
     return {
       ...event,
       offsetPercent,
@@ -211,11 +212,13 @@ export function generateTimelineEvents(
   });
 }
 
+function roundTimelinePercent(pct: number): number {
+  return Math.round(pct * 1000) / 1000;
+}
+
 // Gets all-day events that are active today (before midnight).
 export function getTodayAllDayEvents(now: Date, events: CalendarEvent[]): CalendarEvent[] {
   const midnight = new Date(now.setHours(24, 0, 0, 0));
-  console.log(midnight.toLocaleString());
-
   return events.filter((event) => {
     return event.isAllDay && event.start < midnight && now <= event.end;
   });

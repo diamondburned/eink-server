@@ -2,10 +2,50 @@ import { readFile } from "fs/promises";
 import { error, type RequestEvent } from "@sveltejs/kit";
 import crypto from "crypto";
 
+// BaseDashboardConfig defines the minimal shape that every dashboard config
+// must satisfy. Both the page renderer (+page.server.ts) and the screenshot
+// endpoint ([id]/screenshot.png/+server.ts) use a subset of this type.
+export interface BaseDashboardConfig {
+  width: number;
+  height: number;
+  password: string | null;
+  screenshot?: ScreenshotConfig;
+  [key: string]: unknown; // Allow arbitrary extra fields for dashboard-specific config.
+}
+
+// ScreenshotConfig holds all parameters that control how the screenshot
+// endpoint captures and post-processes a dashboard image.
+export interface ScreenshotConfig {
+  // Seconds to wait after the body is visible before capturing.
+  pageLoadDelaySec?: number;
+  // Maximum age of a cached screenshot in seconds. When set, takeScreenshot
+  // will serve a cached file from disk if it is younger than maxAge, and only
+  // re-capture when the cache is stale (or when force is true).
+  cachedDurationSec?: number;
+  // CSS filter string applied to <body> (e.g. "grayscale(1)").
+  cssFilter?: string;
+  // Additional raw CSS injected into <head> before capture.
+  cssExtras?: string;
+  // Viewport upscale factor — captured at (width * imageScale) x (height *
+  // imageScale), then downscaled back before dithering. Values > 1 reduce
+  // aliasing on thin lines.
+  imageScale?: number;
+  // Optional dithering applied after any rescaling.
+  dithering?: DitheringConfig;
+}
+
+export interface DitheringConfig {
+  // "floyd-steinberg" for error-diffusion dithering, "none" for nearest-color
+  // quantization only.
+  algorithm: "floyd-steinberg" | "none";
+  // Number of grayscale levels in the output palette (2–256).
+  colors: number;
+}
+
 // loadDashboardConfig loads the config for a given dashboard ID from the
 // dashboards/config.json file, automatically resolving any file references and
 // checking the password if enabled.
-export async function loadDashboardConfig<T extends object>(
+export async function loadDashboardConfig<T extends BaseDashboardConfig = BaseDashboardConfig>(
   ev: RequestEvent,
   config: Record<string, unknown>,
   {
@@ -23,7 +63,7 @@ export async function loadDashboardConfig<T extends object>(
   }
 
   // Automatically check for the dashboard's password field, if any.
-  if (checkPassword && "password" in resolved) {
+  if (checkPassword && resolved.password) {
     const gotPassword = ev.url.searchParams.get("password");
     if (!(await checkDashboardPassword(resolved.password, gotPassword))) {
       error(401, "Wrong dashboard password");

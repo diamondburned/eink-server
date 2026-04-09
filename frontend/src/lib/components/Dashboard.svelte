@@ -57,6 +57,7 @@
     font-size: var(--font-size);
     overflow: hidden;
     outline: 1px solid black;
+    paint-order: stroke fill;
 
     /* Force a text outline on all text for better 1-bit rendering. */
     -webkit-text-stroke: 0.2px black;

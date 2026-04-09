@@ -1,25 +1,26 @@
 import type { PageServerLoad } from "./$types";
-import { loadDashboardConfig } from "$lib/dashboardConfig";
+import { loadDashboardConfig } from "$lib/config";
 import { parseCalendarEvents } from "$lib/calendar";
 import {
   HomeAssistantClient,
   currentTimeISO,
   type WeatherAttributes,
+  type WeatherForecast,
   type WeatherForecastResponse,
 } from "$lib/homeAssistant";
+import type { BaseDashboardConfig } from "$lib/config";
 import configRaw from "./config.json";
+import { error } from "@sveltejs/kit";
 
 const HOUR = 60 * 60;
 
-export type Config = {
-  width: number;
-  height: number;
-  password: string | null;
+export type Config = BaseDashboardConfig & {
   homeAssistant: {
     endpoint: string;
     token: string;
     weather: string; // weather entity ID
     calendars: string[]; // list of calendar entity IDs to fetch
+    selfBatteryEntity?: string; // optional entity ID for the device running this dashboard, to show battery status
   };
   timeline: {
     startHours: number; // hours before now to start timeline (negative value)
@@ -30,9 +31,26 @@ export type Config = {
   show24HourTime: boolean;
 };
 
+export type LoadedData = {
+  now: string; // current time in ISO format
+  config: Config;
+  weather?: WeatherAttributes & {
+    condition: string;
+    forecastHourly?: WeatherForecast[];
+    forecastDaily?: WeatherForecast[];
+  };
+  events?: ReturnType<typeof parseCalendarEvents>;
+  batteryLevel?: number;
+};
+
 export const load: PageServerLoad = async (ev) => {
   const now = new Date();
   const config = await loadDashboardConfig<Config>(ev, configRaw);
+
+  const data: LoadedData = {
+    now: now.toISOString(),
+    config,
+  };
 
   // Initialize Home Assistant client
   const haClient = new HomeAssistantClient(
@@ -40,74 +58,85 @@ export const load: PageServerLoad = async (ev) => {
     config.homeAssistant.token,
   );
 
-  const haEntities = await haClient.entities();
-  const haCalendarNames = Object.fromEntries(
-    haEntities
-      .filter((e) => config.homeAssistant.calendars.includes(e.entity_id))
-      .map((e) => [e.entity_id, e.attributes.friendly_name] as const),
-  );
+  const haEntities = await haClient
+    .entities()
+    .catch((err) => error(500, "Cannot fetch entities from Home Assistant: " + err.message));
 
-  const startTime = currentTimeISO(config.timeline.startHours * HOUR);
-  const endTime = currentTimeISO(config.timeline.endHours * HOUR);
+  if (config.homeAssistant.calendars) {
+    const haCalendarNames = Object.fromEntries(
+      haEntities
+        .filter((e) => config.homeAssistant.calendars.includes(e.entity_id))
+        .map((e) => [e.entity_id, e.attributes.friendly_name] as const),
+    );
 
-  // Fetch calendar events from Home Assistant:
-  const haCalendars = await Promise.all(
-    config.homeAssistant.calendars.map(async (calendarID) => ({
-      calendarID,
-      events: await haClient.calendarEvents(calendarID, startTime, endTime),
-    })),
-  );
+    const startTime = currentTimeISO(config.timeline.startHours * HOUR);
+    const endTime = currentTimeISO(config.timeline.endHours * HOUR);
 
-  // Parse HA events into our format
-  const allEvents = haCalendars
-    .map((calendar) =>
-      parseCalendarEvents(calendar.events, {
-        placeholderSummary: `busy - ${haCalendarNames[calendar.calendarID] || calendar.calendarID}`,
-      }),
-    )
-    .flat();
+    // Fetch calendar events from Home Assistant:
+    const haCalendars = await Promise.all(
+      config.homeAssistant.calendars.map(async (calendarID) => ({
+        calendarID,
+        events: await haClient.calendarEvents(calendarID, startTime, endTime),
+      })),
+    );
 
-  const weatherState = await haClient.entityStates<WeatherAttributes>(config.homeAssistant.weather);
+    // Parse HA events into our format
+    data.events = haCalendars
+      .map((calendar) =>
+        parseCalendarEvents(calendar.events, {
+          placeholderSummary: `busy - ${haCalendarNames[calendar.calendarID] || calendar.calendarID}`,
+        }),
+      )
+      .flat();
+  }
 
-  const weatherForecastHourlyResponse = await haClient.callService<WeatherForecastResponse>(
-    "weather",
-    "get_forecasts",
-    {
-      entity_id: config.homeAssistant.weather,
-      type: "hourly",
-    },
-    { returnResponse: true },
-  );
-  const weatherForecastHourly =
-    weatherForecastHourlyResponse.service_response?.[config.homeAssistant.weather]?.forecast ?? [];
+  if (config.homeAssistant.weather) {
+    const weatherState = haEntities.find((e) => e.entity_id === config.homeAssistant.weather);
+    if (!weatherState) {
+      error(500, `Weather entity ${config.homeAssistant.weather} not found in Home Assistant`);
+    }
 
-  const weatherForecastDailyResponse = await haClient.callService<WeatherForecastResponse>(
-    "weather",
-    "get_forecasts",
-    {
-      entity_id: config.homeAssistant.weather,
-      type: "daily",
-    },
-    { returnResponse: true },
-  );
-  const weatherForecastDaily =
-    weatherForecastDailyResponse.service_response?.[config.homeAssistant.weather]?.forecast ?? [];
+    data.weather = {
+      condition: weatherState.state,
+      ...weatherState.attributes,
+    };
 
-  return {
-    now: now.toISOString(),
-    config,
-    weather: {
-      condition: weatherState.state, // The state is the condition (e.g., "sunny", "cloudy")
-      temperature: weatherState.attributes.temperature,
-      temperatureUnit: weatherState.attributes.temperature_unit,
-      humidity: weatherState.attributes.humidity,
-      windSpeed: weatherState.attributes.wind_speed,
-      windSpeedUnit: weatherState.attributes.wind_speed_unit,
-      precipitation: weatherState.attributes.precipitation ?? 0,
-      precipitationUnit: weatherState.attributes.precipitation_unit,
-      forecastHourly: weatherForecastHourly,
-      forecastDaily: weatherForecastDaily,
-    },
-    events: allEvents,
-  };
+    await Promise.all([
+      haClient
+        .callServiceWithResponse<WeatherForecastResponse>("weather", "get_forecasts", {
+          entity_id: config.homeAssistant.weather,
+          type: "hourly",
+        })
+        .then((r) => {
+          data.weather!.forecastHourly =
+            r.service_response?.[config.homeAssistant.weather]?.forecast;
+        }),
+      haClient
+        .callServiceWithResponse<WeatherForecastResponse>("weather", "get_forecasts", {
+          entity_id: config.homeAssistant.weather,
+          type: "daily",
+        })
+        .then((r) => {
+          data.weather!.forecastDaily =
+            r.service_response?.[config.homeAssistant.weather]?.forecast;
+        }),
+    ]);
+  }
+
+  if (config.homeAssistant.selfBatteryEntity) {
+    const batteryEntity = haEntities.find(
+      (e) => e.entity_id === config.homeAssistant.selfBatteryEntity,
+    );
+    assertEntityFound(config.homeAssistant.selfBatteryEntity, batteryEntity);
+    console.log("Battery entity found:", batteryEntity);
+  }
+
+  console.log(data);
+  return data;
 };
+
+function assertEntityFound(entityID: string, entity: unknown): asserts entity {
+  if (!entity) {
+    error(500, `Entity ${entityID} not found in Home Assistant`);
+  }
+}
