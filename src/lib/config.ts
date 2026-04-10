@@ -56,7 +56,7 @@ export async function loadDashboardConfig<T extends BaseDashboardConfig = BaseDa
 ): Promise<T> {
   // Load all entries concurrently!
   const resolved = await resolveConfigValue(config).catch((err) => {
-    throw new Error(`Failed to resolve config`, { cause: err });
+    throw new Error(`Failed to resolve config: ${err}`, { cause: err });
   });
   if (typeof resolved !== "object" || resolved === null) {
     throw new Error(`Expected config to be an object`);
@@ -86,7 +86,7 @@ async function resolveConfigValue(value: unknown): Promise<any> {
       .then((t) => t.trim())
       .catch((err) => {
         if (value._default === undefined) {
-          throw new Error(`Failed to read file ${value._file}`, { cause: err });
+          throw new Error(`Failed to read file ${value._file}: ${err}`, { cause: err });
         }
         return value._default;
       });
@@ -108,7 +108,7 @@ async function resolveConfigValue(value: unknown): Promise<any> {
         Object.entries(value).map(async ([k, v]) => [
           k,
           await resolveConfigValue(v).catch((err) => {
-            throw new Error(`Error at key ${k}:`, {
+            throw new Error(`Error at key ${k}: ${err}`, {
               cause: err,
             });
           }),

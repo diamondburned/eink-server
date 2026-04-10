@@ -21,6 +21,7 @@
 
       perSystem =
         {
+          self',
           pkgs,
           lib,
           ...
@@ -29,8 +30,8 @@
           devShells.default = pkgs.mkShell {
             buildInputs = with pkgs; [
               chromium
-              nodejs
-              pnpm
+              nodejs_24
+              pnpm_10
               esbuild
               esphome
             ];
@@ -42,6 +43,17 @@
 
             # Lock this to package.json.
             ESBUILD_BINARY_PATH = "${lib.getExe pkgs.esbuild}";
+          };
+
+          packages = {
+            default = self'.packages.eink-server;
+            eink-server =
+              with pkgs;
+              callPackage ./nix/package.nix {
+                inherit self;
+                nodejs = nodejs_24;
+                pnpm = pnpm_10;
+              };
           };
         };
     };
