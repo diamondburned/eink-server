@@ -48,7 +48,7 @@ export async function getBrowser(): Promise<Browser> {
       ],
     })
     .catch((err) => {
-      throw new Error(`Failed to launch Chromium at '${executablePath}'`, { cause: err });
+      throw new Error(`Failed to launch Chromium at '${executablePath}': ${err}`, { cause: err });
     });
 
   sharedBrowser.on("disconnected", () => {

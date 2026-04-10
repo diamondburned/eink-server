@@ -78,7 +78,7 @@ export async function getBrowser(): Promise<FirefoxBrowser> {
       },
     })
     .catch((err) => {
-      throw new Error(`Failed to launch Firefox at '${executablePath}'`, { cause: err });
+      throw new Error(`Failed to launch Firefox at '${executablePath}': ${err}`, { cause: err });
     });
 
   sharedBrowser = browser as FirefoxBrowser;
@@ -112,6 +112,8 @@ async function firefoxExecPath(): Promise<string> {
 
   for (const name of ["firefox", "firefox-esr", "firefox-bin"]) {
     try {
+      // TODO: this doesn't work if the env doesn't have which.
+      // Maybe fix.
       const which = await exec(`which ${name}`);
       const path = which.stdout.trim();
       if (path) {
