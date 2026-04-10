@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { stat, readFile, writeFile, mkdir } from "fs/promises";
+import { env } from "$env/dynamic/private";
 import { join } from "path";
 import { tmpdir } from "os";
 import { ditherPNG } from "./dither.js";
@@ -24,7 +25,7 @@ export interface ScreenshotResult {
 
 // screenshotsDir returns the directory where cached screenshots are stored.
 function screenshotsDir(): string {
-  return process.env.EINK_SERVER_DIR || `${tmpdir()}/eink-server`;
+  return env.EINK_SERVER_DIR || `${tmpdir()}/eink-server`;
 }
 
 // screenshotPathFor returns the path where the cached PNG for the given

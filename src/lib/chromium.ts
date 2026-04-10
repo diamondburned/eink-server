@@ -1,5 +1,6 @@
 import { chromium, type Browser } from "playwright-core";
 import { exec as execCallback } from "child_process";
+import { env } from "$env/dynamic/private";
 import util from "util";
 
 const exec = util.promisify(execCallback);
@@ -68,8 +69,8 @@ function resetIdleTimer(): void {
 // findChromium searches common locations for a Chromium/Chrome binary,
 // mirroring the lookup order in the Go server's puppeteer package.
 async function chromiumExecPath(): Promise<string> {
-  if (process.env.CHROMIUM_EXECUTABLE) {
-    return process.env.CHROMIUM_EXECUTABLE;
+  if (env.CHROMIUM_EXECUTABLE) {
+    return env.CHROMIUM_EXECUTABLE;
   }
 
   for (const name of ["chromium", "google-chrome", "chromium-browser", "chrome"]) {

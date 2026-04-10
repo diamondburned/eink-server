@@ -1,6 +1,8 @@
 import type { PageServerLoad } from "./$types";
-import { loadDashboardConfig } from "$lib/config";
-import { parseCalendarEvents } from "$lib/calendar";
+import { loadDashboardConfig, type BaseDashboardConfig } from "$lib/config";
+import { error } from "@sveltejs/kit";
+
+import { parseCalendarEvents, type TimelineConfig } from "./lib/calendar";
 import {
   HomeAssistantClient,
   currentTimeISO,
@@ -8,10 +10,8 @@ import {
   type WeatherForecast,
   type WeatherForecastResponse,
 } from "$lib/homeAssistant";
-import type { BaseDashboardConfig } from "$lib/config";
 import * as e2clicker from "./lib/e2clicker";
 import configRaw from "./config.json";
-import { error } from "@sveltejs/kit";
 
 const HOUR = 60 * 60;
 
@@ -23,11 +23,7 @@ export type Config = BaseDashboardConfig & {
     calendars: string[]; // list of calendar entity IDs to fetch
     selfBatteryEntity?: string; // optional entity ID for the device running this dashboard, to show battery status
   };
-  timeline: {
-    startHours: number; // hours before now to start timeline (negative value)
-    endHours: number; // hours after now to end timeline
-    pixelsPerHour: number; // height in pixels for each hour in the timeline
-  };
+  timeline: TimelineConfig;
   showMinutes: boolean | "quarterly";
   show24HourTime: boolean;
   e2clicker?: {

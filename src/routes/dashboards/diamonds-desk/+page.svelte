@@ -1,88 +1,33 @@
 <script lang="ts">
   import type { PageData } from "./$types";
   import Dashboard from "$lib/components/Dashboard.svelte";
-  import { onMount } from "svelte";
+  import SVGIcon from "$lib/components/SVGIcon.svelte";
+  import { tick } from "svelte";
   import { formatWeatherCondition, getWeatherIconSVG } from "$lib/homeAssistant";
-  import {
-    generateTimelineHours,
-    generateTimelineEvents,
-    getTodayAllDayEvents,
-  } from "$lib/calendar";
-  import {
-    formatTime,
-    formatDuration,
-    formatDayName,
-    getEventDayInfo,
-    batteryLevelSVG,
-  } from "./lib";
+  import { batteryLevelSVG } from "./lib/battery";
+  import { calculateTimeline, getEventDayInfo } from "./lib/calendar";
+  import { formatTime, formatEventDuration, formatDayName } from "./lib/timefmt";
   import { mdiWeatherWindy, mdiWeatherPouring, mdiWaterPercent } from "@mdi/js";
-
-  // Fix web components importing.
-  // https://stackoverflow.com/a/74541536
-  onMount(() => import("@jamescoyle/svg-icon"));
 
   interface Props {
     data: PageData;
   }
 
   let { data }: Props = $props();
-  const currentTime = () => new Date(data.now);
-
-  // Timeline calculations (client-side) - use $derived for reactive computations
-  const timeline = $derived.by(() => {
-    const HOUR_MS = 60 * 60 * 1000;
-    const now = currentTime();
-
-    // Calculate unrounded timeline bounds using config values
-    const startDate = new Date(now.getTime() + data.config.timeline.startHours * HOUR_MS);
-    const endDate = new Date(now.getTime() + data.config.timeline.endHours * HOUR_MS);
-
-    // Round start time down to the hour
-    const roundedStart = new Date(startDate);
-    roundedStart.setMinutes(0, 0, 0);
-
-    // Round end time up to the hour
-    const roundedEnd = new Date(endDate);
-    if (
-      roundedEnd.getMinutes() > 0 ||
-      roundedEnd.getSeconds() > 0 ||
-      roundedEnd.getMilliseconds() > 0
-    ) {
-      roundedEnd.setHours(roundedEnd.getHours() + 1);
-    }
-    roundedEnd.setMinutes(0, 0, 0);
-
-    // Use rounded times for all calculations to ensure consistency
-    const start = roundedStart.getTime();
-    const end = roundedEnd.getTime();
-    const duration = end - start;
-    const currentOffset = now.getTime() - start;
-
-    const hours = generateTimelineHours(startDate, endDate, now);
-    const hourCount = hours.length - 1; // Number of hour spans
-
-    return {
-      hours,
-      // TODO: render partial error bars:
-      events: generateTimelineEvents(roundedStart, roundedEnd, data.events ?? []),
-      allDayEvents: getTodayAllDayEvents(now, data.events ?? []),
-      currentTimePercent: (currentOffset / duration) * 100,
-      timelineHeight: hourCount * data.config.timeline.pixelsPerHour,
-    };
-  });
-
   let timelineContainer: HTMLElement;
 
-  function scrollIfCurrent(element: HTMLDivElement, isCurrent: boolean) {
-    if (!isCurrent) {
-      return;
-    }
+  const currentTime = () => new Date(data.now);
 
-    element.scrollIntoView({ behavior: "instant", block: "center" });
-    // Scroll down a bit to show more of the future.
-    setTimeout(() => {
+  const timeline = $derived(
+    calculateTimeline(currentTime(), data.config.timeline, data.events ?? []),
+  );
+
+  function scrollIfCurrent(element: HTMLDivElement, isCurrent: boolean) {
+    if (!isCurrent) return;
+    tick().then(() => {
+      element.scrollIntoView({ behavior: "instant", block: "center" });
       timelineContainer.scrollBy({ top: 100, behavior: "instant" });
-    }, 0);
+    });
   }
 </script>
 
@@ -108,12 +53,12 @@
         <section class="weather-section">
           {#if data.weather}
             <div class="weather-header">
-              <svg-icon
+              <SVGIcon
                 class="weather-icon"
                 type="mdi"
                 path={getWeatherIconSVG(data.weather.condition)}
-                size="72"
-              ></svg-icon>
+                size={72}
+              />
               <div class="weather-info">
                 <div class="temperature">
                   {#if data.weather.temperature !== undefined}
@@ -133,7 +78,7 @@
             <div class="weather-details">
               {#if data.weather.precipitation_unit !== undefined}
                 <div class="detail">
-                  <svg-icon type="mdi" path={mdiWeatherPouring}></svg-icon>
+                  <SVGIcon type="mdi" path={mdiWeatherPouring} />
                   <span class="value">
                     {data.weather.precipitation ?? 0}<span class="unit"
                       >{data.weather.precipitation_unit}</span
@@ -143,13 +88,13 @@
               {/if}
               {#if data.weather.humidity !== undefined}
                 <div class="detail">
-                  <svg-icon type="mdi" path={mdiWaterPercent}></svg-icon>
+                  <SVGIcon type="mdi" path={mdiWaterPercent} />
                   <span class="value">{data.weather.humidity}<span class="unit">%</span></span>
                 </div>
               {/if}
               {#if data.weather.wind_speed_unit !== undefined}
                 <div class="detail">
-                  <svg-icon type="mdi" path={mdiWeatherWindy}></svg-icon>
+                  <SVGIcon type="mdi" path={mdiWeatherWindy} />
                   <span class="value">
                     {Math.round(data.weather.wind_speed ?? 0)}<span class="unit"
                       >{data.weather.wind_speed_unit}</span
@@ -166,12 +111,12 @@
                     <div class="forecast-day-name">
                       {formatDayName(day.datetime, currentTime())}
                     </div>
-                    <svg-icon
+                    <SVGIcon
                       class="forecast-icon"
                       type="mdi"
                       path={getWeatherIconSVG(day.condition ?? "")}
-                      size="28"
-                    ></svg-icon>
+                      size={28}
+                    />
                     <div class="forecast-temps">
                       <span class="forecast-high">
                         {day.temperature !== undefined ? Math.round(day.temperature) : "—"}°
@@ -274,7 +219,7 @@
                     minute: "2-digit",
                   })}
                   •
-                  {formatDuration(event.start, event.end)}
+                  {formatEventDuration(event)}
                 </div>
                 {#if event.description}
                   <div class="event-description">{event.description}</div>
@@ -288,8 +233,7 @@
 
     {#if data.batteryLevel}
       <div class="battery-status">
-        <svg-icon class="icon" type="mdi" path={batteryLevelSVG(data.batteryLevel)} size="20">
-        </svg-icon>
+        <SVGIcon class="icon" type="mdi" path={batteryLevelSVG(data.batteryLevel)} size={20} />
         <span class="text">{Math.round(data.batteryLevel)}%</span>
       </div>
     {/if}
@@ -416,7 +360,7 @@
           font-size: 0.9em;
         }
 
-        .forecast-icon {
+        :global(.forecast-icon) {
           margin: 0.25em 0;
         }
 
@@ -629,7 +573,7 @@
     align-items: center;
     gap: 0.2em;
 
-    .icon {
+    :global(.icon) {
       transform: rotate(90deg);
     }
 

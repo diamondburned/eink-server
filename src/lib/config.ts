@@ -1,5 +1,6 @@
 import { readFile } from "fs/promises";
 import { error, type RequestEvent } from "@sveltejs/kit";
+import { env } from "$env/dynamic/private";
 import crypto from "crypto";
 
 // BaseDashboardConfig defines the minimal shape that every dashboard config
@@ -75,21 +76,32 @@ export async function loadDashboardConfig<T extends BaseDashboardConfig = BaseDa
 
 async function resolveConfigValue(value: unknown): Promise<any> {
   if (valueIsSpecialObject(value)) {
-    if (value._file === undefined) {
-      if (value._default === undefined) {
-        throw new Error(`Config value must have either _file or _default`);
+    if (value._file) {
+      const file = await readFile(value._file, "utf-8")
+        .then((t) => t.trim())
+        .catch((err) => {
+          if (err.code !== "ENOENT") {
+            console.warn(`Ignoring error while reading config file ${value._file}: ${err}`);
+          }
+          return undefined;
+        });
+      if (file !== undefined) {
+        return file;
       }
+    }
+
+    if (value._env) {
+      const envValue = env[value._env];
+      if (envValue !== undefined) {
+        return envValue;
+      }
+    }
+
+    if (value._default !== undefined) {
       return value._default;
     }
 
-    return await readFile(value._file, "utf-8")
-      .then((t) => t.trim())
-      .catch((err) => {
-        if (value._default === undefined) {
-          throw new Error(`Failed to read file ${value._file}: ${err}`, { cause: err });
-        }
-        return value._default;
-      });
+    throw new Error(`Invalid config object: ${JSON.stringify(value)}`);
   }
 
   if (typeof value === "object") {
@@ -120,7 +132,11 @@ async function resolveConfigValue(value: unknown): Promise<any> {
   return value; // Not a special config object, return as-is.
 }
 
-function valueIsSpecialObject(value: any): value is { _file?: string; _default?: any } {
+function valueIsSpecialObject(value: any): value is {
+  _file?: string;
+  _env?: string;
+  _default?: any;
+} {
   return (
     typeof value === "object" &&
     value !== null &&

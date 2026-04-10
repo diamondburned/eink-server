@@ -1,4 +1,10 @@
-import type { CalendarEvent as HACalendarEvent } from "./homeAssistant/types";
+import type { CalendarEvent as HACalendarEvent } from "$lib/homeAssistant/types";
+
+export type TimelineConfig = {
+  startHours: number; // hours before now to start timeline (negative value)
+  endHours: number; // hours after now to end timeline
+  pixelsPerHour: number; // height in pixels for each hour in the timeline
+};
 
 export interface CalendarEvent {
   summary: string | null;
@@ -60,10 +66,48 @@ function parseHADate(date: { dateTime?: string; date?: string }): Date {
   }
 }
 
-// Generates hour markers for the continuous timeline.
-// startTime will be rounded down to the hour, endTime will be rounded up.
-// Returns array of hour markers covering the time range.
-export function generateTimelineHours(startTime: Date, endTime: Date, now: Date): TimelineHour[] {
+export function calculateTimeline(now: Date, config: TimelineConfig, events: CalendarEvent[]) {
+  const HOUR_MS = 60 * 60 * 1000;
+
+  // Calculate unrounded timeline bounds using config values
+  const startDate = new Date(now.getTime() + config.startHours * HOUR_MS);
+  const endDate = new Date(now.getTime() + config.endHours * HOUR_MS);
+
+  // Round start time down to the hour
+  const roundedStart = new Date(startDate);
+  roundedStart.setMinutes(0, 0, 0);
+
+  // Round end time up to the hour
+  const roundedEnd = new Date(endDate);
+  if (
+    roundedEnd.getMinutes() > 0 ||
+    roundedEnd.getSeconds() > 0 ||
+    roundedEnd.getMilliseconds() > 0
+  ) {
+    roundedEnd.setHours(roundedEnd.getHours() + 1);
+  }
+  roundedEnd.setMinutes(0, 0, 0);
+
+  // Use rounded times for all calculations to ensure consistency
+  const start = roundedStart.getTime();
+  const end = roundedEnd.getTime();
+  const duration = end - start;
+  const currentOffset = now.getTime() - start;
+
+  const hours = generateTimelineHours(startDate, endDate, now);
+  const hourCount = hours.length - 1; // Number of hour spans
+
+  return {
+    hours,
+    // TODO: render partial error bars:
+    events: generateTimelineEvents(roundedStart, roundedEnd, events),
+    allDayEvents: getTodayAllDayEvents(now, events),
+    currentTimePercent: (currentOffset / duration) * 100,
+    timelineHeight: hourCount * config.pixelsPerHour,
+  };
+}
+
+function generateTimelineHours(startTime: Date, endTime: Date, now: Date): TimelineHour[] {
   const hours: TimelineHour[] = [];
 
   // Round start time down to the hour
@@ -173,10 +217,7 @@ function detectOverlaps(
   return result;
 }
 
-// Generates timeline events with positioning information for continuous timeline.
-// timelineStart and timelineEnd should be rounded to the hour.
-// Returns array of timeline events with positioning data.
-export function generateTimelineEvents(
+function generateTimelineEvents(
   timelineStart: Date,
   timelineEnd: Date,
   events: CalendarEvent[],
@@ -212,14 +253,57 @@ export function generateTimelineEvents(
   });
 }
 
-function roundTimelinePercent(pct: number): number {
-  return Math.round(pct * 1000) / 1000;
-}
-
-// Gets all-day events that are active today (before midnight).
-export function getTodayAllDayEvents(now: Date, events: CalendarEvent[]): CalendarEvent[] {
+function getTodayAllDayEvents(now: Date, events: CalendarEvent[]): CalendarEvent[] {
   const midnight = new Date(now.setHours(24, 0, 0, 0));
   return events.filter((event) => {
     return event.isAllDay && event.start < midnight && now <= event.end;
   });
+}
+
+export interface EventDayInfo {
+  currentDay: number;
+  totalDays: number;
+}
+
+// Calculates which day of a multi-day event is currently being displayed.
+// Returns null if event is single-day.
+export function getEventDayInfo(
+  event: { start: Date; end: Date },
+  currentDate: Date,
+): EventDayInfo | null {
+  const eventStart = event.start;
+  const eventEnd = event.end;
+
+  // Set all times to start of day for day counting
+  const todayStart = new Date(currentDate);
+  todayStart.setHours(0, 0, 0, 0);
+
+  const eventStartDay = new Date(eventStart);
+  eventStartDay.setHours(0, 0, 0, 0);
+
+  const eventEndDay = new Date(eventEnd);
+  eventEndDay.setHours(0, 0, 0, 0);
+
+  // Calculate total days (inclusive)
+  // For all-day events, Home Assistant uses exclusive end dates (end date is the day after the last day)
+  const totalDays = Math.max(
+    1,
+    Math.ceil((eventEndDay.getTime() - eventStartDay.getTime()) / (1000 * 60 * 60 * 24)),
+  );
+
+  // Only show day info if event spans multiple days
+  if (totalDays <= 1) {
+    return null;
+  }
+
+  // Calculate which day we're on (1-based)
+  const currentDay = Math.min(
+    totalDays,
+    Math.max(
+      1,
+      Math.floor((todayStart.getTime() - eventStartDay.getTime()) / (1000 * 60 * 60 * 24)) + 1,
+    ),
+  );
+
+  return { currentDay, totalDays };
 }
