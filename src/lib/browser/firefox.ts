@@ -44,6 +44,7 @@ export async function getBrowser(): Promise<FirefoxBrowser> {
       browser: "firefox",
       executablePath,
       headless: true,
+      timeout: 180_000, // 3 minutes
       env: {
         // Kill off X11 and Wayland display backends to avoid issues.
         DISPLAY: "",
@@ -52,6 +53,7 @@ export async function getBrowser(): Promise<FirefoxBrowser> {
       args: [
         "--no-first-run",
         "--no-remote",
+        "--no-sandbox",
         "--new-instance",
         `--force-device-scale-factor=${scaleFactor}`,
         "--window-size=1920,1080",

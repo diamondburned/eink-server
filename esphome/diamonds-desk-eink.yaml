@@ -26,7 +26,7 @@ substitutions:
 globals:
   - id: failing
     type: bool
-    restore_value: no
+    restore_value: yes
     initial_value: "true"
 
 # Useful references:
