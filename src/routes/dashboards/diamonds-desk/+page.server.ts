@@ -9,6 +9,7 @@ import {
   type WeatherForecastResponse,
 } from "$lib/homeAssistant";
 import type { BaseDashboardConfig } from "$lib/config";
+import * as e2clicker from "./lib/e2clicker";
 import configRaw from "./config.json";
 import { error } from "@sveltejs/kit";
 
@@ -29,6 +30,9 @@ export type Config = BaseDashboardConfig & {
   };
   showMinutes: boolean | "quarterly";
   show24HourTime: boolean;
+  e2clicker?: {
+    token: string;
+  };
 };
 
 export type LoadedData = {
@@ -41,6 +45,7 @@ export type LoadedData = {
   };
   events?: ReturnType<typeof parseCalendarEvents>;
   batteryLevel?: number;
+  estrogenInfo?: e2clicker.NextDoseInfo;
 };
 
 export const load: PageServerLoad = async (ev) => {
@@ -131,6 +136,15 @@ export const load: PageServerLoad = async (ev) => {
     const level = parseFloat(batteryEntity.state);
     if (!isNaN(level)) {
       data.batteryLevel = level;
+    }
+  }
+
+  if (config.e2clicker) {
+    try {
+      const nextDoseTime = await e2clicker.getNextDoseTime(config.e2clicker);
+      data.estrogenInfo = nextDoseTime ?? undefined;
+    } catch (err) {
+      console.warn("Failed to fetch next dose time from e2clicker:", err);
     }
   }
 

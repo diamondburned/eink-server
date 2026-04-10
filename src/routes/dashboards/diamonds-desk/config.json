@@ -29,5 +29,10 @@
     "pixelsPerHour": 40
   },
   "showMinutes": "quarterly",
-  "show24HourTime": true
+  "show24HourTime": true,
+  "e2clicker": {
+    "token": {
+      "_file": "secrets/e2clicker-token"
+    }
+  }
 }

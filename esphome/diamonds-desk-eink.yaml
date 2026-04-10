@@ -9,6 +9,8 @@ esphome:
       - delay: 200ms
       - component.update: battery_voltage
       - component.update: battery_level
+      # Set the error screen.
+      - component.update: epaper_display
 
 esp32:
   board: esp32-s3-devkitc-1
@@ -19,7 +21,13 @@ esp32:
 substitutions:
   dashboard_url: "http://mizuki.lan:5100/dashboards/diamonds-desk/screenshot.png"
   refresh_interval: "5min"
-  redraw_every_refreshes: 3 # every 15 minutes for a 5-minute refresh interval
+  redraw_every_refreshes: 5
+
+globals:
+  - id: failing
+    type: bool
+    restore_value: no
+    initial_value: "true"
 
 # Useful references:
 # https://github.com/esphome/feature-requests/issues/3035
@@ -36,17 +44,12 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   on_connect:
-    - component.update: epaper_display
-    - delay: 3s
-    - component.update: dashboard_image
+    - delay: 1s
+    - component.update: online_dashboard_image
 
 api:
 
 logger:
-
-deep_sleep:
-  run_duration: 30s
-  sleep_duration: ${refresh_interval}
 
 web_server:
   log: true
@@ -56,20 +59,13 @@ http_request:
   timeout: 45s
   watchdog_timeout: 60s
 
-globals:
-  - id: failing
-    type: bool
-    restore_value: true
-    initial_value: "true"
-
 online_image:
-  - id: dashboard_image
+  - id: online_dashboard_image
     url: ${dashboard_url}
     # type: GRAYSCALE
     type: BINARY
     format: PNG
     buffer_size: 16384 # 16KiB
-    placeholder: error_image
     update_interval: ${refresh_interval}
     on_download_finished:
       then:
@@ -103,7 +99,7 @@ script:
     then:
       - light.turn_on:
           id: buzzer
-          brightness: 30%
+          brightness: 50%
       - delay: 80ms
       - light.turn_off:
           id: buzzer
@@ -122,7 +118,7 @@ script:
     mode: single
     then:
       - script.execute: led_on
-      - component.update: dashboard_image
+      - component.update: online_dashboard_image
       - delay: 200ms
       - script.execute: led_off
       - script.execute: buzz_shortly
@@ -143,7 +139,7 @@ display:
     lambda: |-
       it.image(
         0, 0,
-        id(failing) ? id(error_image) : id(dashboard_image),
+        id(failing) ? id(error_image) : id(online_dashboard_image),
         COLOR_OFF, COLOR_ON
       );
     update_interval: never # unless triggered via on_download_finished
@@ -162,10 +158,11 @@ binary_sensor:
   - id: refresh_button
     name: "Refresh Button"
     platform: gpio
-    pin:
+    pin: &refresh_button
       number: GPIO3 # Green button
       mode: INPUT_PULLUP
       inverted: true
+      allow_other_uses: true
     on_press:
       then:
         - script.execute: refresh_dashboard
@@ -268,3 +265,10 @@ sensor:
       - clamp:
           min_value: 0
           max_value: 100
+
+deep_sleep:
+  id: deep_sleep_1
+  run_duration: 30s
+  sleep_duration: ${refresh_interval}
+  wakeup_pin:
+    - pin: *refresh_button

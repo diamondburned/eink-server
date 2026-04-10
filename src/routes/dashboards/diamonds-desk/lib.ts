@@ -53,20 +53,35 @@ export function formatTime(isoString: string, options: FormatTimeOptions): strin
 
 // Formats a duration between two dates.
 // Returns formatted string like "2h 30m", "45m", etc.
-export function formatDuration(start: string | Date, end: string | Date): string {
-  const startDate = start instanceof Date ? start : new Date(start);
-  const endDate = end instanceof Date ? end : new Date(end);
-  const durationMs = endDate.getTime() - startDate.getTime();
-  const minutes = Math.round(durationMs / (1000 * 60));
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
+export function formatDuration(
+  start: string | Date,
+  end: string | Date,
+  {
+    long = false,
+  }: {
+    long?: boolean;
+  } = {},
+): string {
+  start = new Date(start);
+  end = new Date(end);
 
-  if (hours > 0 && mins > 0) {
-    return `${hours}h ${mins}m`;
-  } else if (hours > 0) {
-    return `${hours}h`;
+  // @ts-ignore - Temporal is not yet in TypeScript lib
+  const duration = Temporal.Duration.compare(start.toISOString(), end.toISOString());
+
+  // @ts-ignore - Intl.DurationFormat is not yet in TypeScript lib
+  let str: string = new Intl.DurationFormat("en-US", { style: long ? "long" : "narrow" }).format(
+    duration,
+  );
+
+  if (long) {
+    // Change the last comma to "and" for better readability.
+    str = str.replace(/,([^,]*)$/, " and$1");
+  } else {
+    // Remove all spaces.
+    str = str.replace(/\s/g, "");
   }
-  return `${mins}m`;
+
+  return str;
 }
 
 // Formats a date as a day name (Today, Tomorrow, or weekday abbreviation).
