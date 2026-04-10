@@ -8,7 +8,12 @@
   fetchPnpmDeps,
   pnpmConfigHook,
 
+  firefox,
+  chromium,
+
   extraNpmPackages ? [ ],
+  includeFirefox ? true,
+  includeChromium ? false,
 }:
 
 let
@@ -16,6 +21,10 @@ let
     "esphome"
     "nix"
   ];
+  extraPaths =
+    [ ]
+    ++ (lib.optional includeFirefox "${lib.getExe firefox}")
+    ++ (lib.optional includeChromium "${lib.getExe chromium}");
 in
 
 stdenvNoCC.mkDerivation (final: {
@@ -68,6 +77,9 @@ stdenvNoCC.mkDerivation (final: {
     mkdir -p $out/bin
     makeWrapper ${lib.getExe nodejs} $out/bin/eink-server \
       --set NODE_PATH ${placeholder "out"}/share/eink-server/node_modules \
+      --set-default ORIGIN "http://localhost:3000" \
+      --set-default PORT "3000" \
+      --suffix PATH : ${lib.makeBinPath extraPaths} \
       --add-flags "${placeholder "out"}/share/eink-server/build"
 
     runHook postInstall
