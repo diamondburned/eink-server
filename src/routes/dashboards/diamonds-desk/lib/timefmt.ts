@@ -60,19 +60,7 @@ export function formatEventDuration(event: CalendarEvent): string {
 // Formats a date as a day name (Today, Tomorrow, or weekday abbreviation).
 export function formatDayName(isoString: string, currentDate: Date): string {
   const date = new Date(isoString);
-
-  // Check if it's today
-  if (date.toDateString() === currentDate.toDateString()) {
-    return "Today";
-  }
-
-  // Check if it's tomorrow
-  const tomorrow = new Date(currentDate);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  if (date.toDateString() === tomorrow.toDateString()) {
-    return "Tomorrow";
-  }
-
-  // Otherwise return the day of the week
-  return date.toLocaleDateString("en-US", { weekday: "short" });
+  return date.toDateString() === currentDate.toDateString()
+    ? "Today"
+    : date.toLocaleDateString("en-US", { weekday: "short" });
 }

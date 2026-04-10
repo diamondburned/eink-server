@@ -243,7 +243,7 @@
 <style>
   .container {
     display: grid;
-    grid-template-columns: 450px 1fr;
+    grid-template-columns: 400px 1fr;
 
     height: 100%;
     overflow: hidden;
@@ -352,9 +352,9 @@
       .forecast-day {
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
         align-items: center;
         gap: 0.5em;
-        padding: 0 0.5em;
 
         .forecast-day-name {
           font-size: 0.9em;
