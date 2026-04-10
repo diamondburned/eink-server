@@ -21,10 +21,7 @@ let
     "esphome"
     "nix"
   ];
-  extraPaths =
-    [ ]
-    ++ (lib.optional includeFirefox "${lib.getExe firefox}")
-    ++ (lib.optional includeChromium "${lib.getExe chromium}");
+  extraRuntimeDeps = (lib.optional includeFirefox firefox) ++ (lib.optional includeChromium chromium);
 in
 
 stdenvNoCC.mkDerivation (final: {
@@ -79,7 +76,7 @@ stdenvNoCC.mkDerivation (final: {
       --set NODE_PATH ${placeholder "out"}/share/eink-server/node_modules \
       --set-default ORIGIN "http://localhost:3000" \
       --set-default PORT "3000" \
-      --suffix PATH : ${lib.makeBinPath extraPaths} \
+      --suffix PATH : ${lib.makeBinPath extraRuntimeDeps} \
       --add-flags "${placeholder "out"}/share/eink-server/build"
 
     runHook postInstall
