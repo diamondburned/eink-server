@@ -12,7 +12,7 @@
   "homeAssistant": {
     "endpoint": "https://ha.d14.place",
     "token": {
-      "_file": "secrets/home-assistant-token"
+      "_env": "EINK_HOME_ASSISTANT_TOKEN"
     },
     "weather": "weather.forecast_home",
     "calendars": [
@@ -32,7 +32,7 @@
   "show24HourTime": true,
   "e2clicker": {
     "token": {
-      "_file": "secrets/e2clicker-token"
+      "_env": "EINK_E2CLICKER_TOKEN"
     }
   }
 }
