@@ -92,7 +92,7 @@ export async function takeScreenshot(
 
   const page = await browser.newPage({
     viewport: { width, height },
-    deviceScaleFactor: screenshot.imageScale,
+    deviceScaleFactor: screenshot.imageScale ?? 1,
   });
 
   let png: Buffer | undefined;
@@ -109,18 +109,15 @@ export async function takeScreenshot(
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
 
-    // Inject CSS filter and any extra styles.
-    await page.addStyleTag({
-      content: [
-        screenshot.cssFilter ? `body { filter: ${screenshot.cssFilter}; }` : "",
-        screenshot.cssExtras ?? "",
-      ].join("\n"),
-    });
-
     png = await page.screenshot({
       type: "png",
       clip: { x: 0, y: 0, width, height },
       scale: screenshot.imageScale ? "device" : "css",
+      style: [
+        screenshot.cssFilter ? `body { filter: ${screenshot.cssFilter}; }` : "",
+        screenshot.cssExtras ?? "",
+      ].join("\n"),
+      animations: "disabled",
     });
   } finally {
     await page.close();

@@ -242,6 +242,19 @@
 
 <style>
   .container {
+    font-family: "Cozette";
+    font-size: 12.75px;
+    letter-spacing: 1;
+
+    /* Bitmap font tweaks: */
+    text-size-adjust: none;
+    -webkit-text-size-adjust: none;
+
+    -webkit-font-smoothing: none;
+    font-smooth: never;
+
+    filter: contrast(100.00001%);
+
     display: grid;
     grid-template-columns: 400px 1fr;
 
@@ -268,14 +281,19 @@
 
       .time {
         font-size: 6.5em;
-        font-weight: 600;
+        font-weight: bold;
         white-space: norap;
 
         :global(.hidden-minutes),
         :global(.quarterly-minutes) {
           color: white;
+        }
+
+        :has(:global(.hidden-minutes)) &,
+        :has(:global(.quarterly-minutes)) & {
           paint-order: stroke fill;
-          -webkit-text-stroke: 6px black;
+          -webkit-text-stroke: 4px black;
+          letter-spacing: 0.1em;
         }
       }
     }
@@ -314,18 +332,17 @@
 
         .temperature {
           font-size: 4em;
-          font-weight: 600;
+          font-weight: bold;
           line-height: 1;
 
           .unit {
             font-size: 0.5em;
-            font-weight: 300;
             vertical-align: super;
           }
         }
 
         .condition {
-          font-size: 1.25em;
+          font-size: 1.6em;
         }
       }
 
@@ -356,10 +373,6 @@
         align-items: center;
         gap: 0.5em;
 
-        .forecast-day-name {
-          font-size: 0.9em;
-        }
-
         :global(.forecast-icon) {
           margin: 0.25em 0;
         }
@@ -367,14 +380,13 @@
         .forecast-temps {
           display: flex;
           gap: 0.5em;
-          font-size: 1em;
 
           .forecast-high {
-            font-weight: 600;
+            font-weight: bold;
           }
 
           .forecast-low {
-            font-weight: 300;
+            font-weight: normal;
           }
         }
       }
@@ -398,8 +410,8 @@
       padding-bottom: 1em;
 
       .timeline-date {
-        font-size: 1.5em;
-        font-weight: 600;
+        font-size: 2em;
+        font-weight: bold;
       }
     }
 
@@ -417,15 +429,10 @@
         border: 1.5px solid black;
         border-radius: 4px;
 
-        font-weight: 600;
-
-        .event-summary {
-          font-size: 0.9em;
-        }
+        font-weight: bold;
 
         .event-day-info {
-          font-size: 0.9em;
-          font-weight: 300;
+          font-weight: normal;
         }
       }
     }
@@ -447,12 +454,6 @@
       left: 0;
       right: 0;
       height: 0;
-      /* Each hour is 100% / 12 hours apart */
-
-      .hour-label {
-        padding: 0.25em 0;
-        margin-top: -0.25em;
-      }
     }
 
     .hour-label {
@@ -460,7 +461,7 @@
       left: 0;
       top: -0.6em;
       width: var(--hour-width);
-      font-size: 0.9em;
+      padding: 0.25em 0;
       padding-right: 0.5em;
       z-index: 2;
 
@@ -522,8 +523,7 @@
       min-height: 1.2em;
 
       .event-summary {
-        font-weight: 600;
-        font-size: 0.9em;
+        font-weight: bold;
         line-height: 1.2;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -531,7 +531,6 @@
       }
 
       .event-time {
-        font-size: 0.8em;
         margin-bottom: 0.2em;
         white-space: nowrap;
         overflow: hidden;
@@ -539,7 +538,6 @@
       }
 
       .event-description {
-        font-size: 0.8em;
         margin-top: 0.2em;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -575,10 +573,7 @@
 
     :global(.icon) {
       transform: rotate(90deg);
-    }
-
-    .text {
-      font-size: 0.8em;
+      margin-top: -0.1em;
     }
   }
 </style>

@@ -3,7 +3,7 @@
   "height": 480,
   "password": null,
   "screenshot": {
-    "pageLoadDelaySec": 1,
+    "pageLoadDelaySec": 0.5,
     "dithering": {
       "algorithm": "none",
       "colors": 2

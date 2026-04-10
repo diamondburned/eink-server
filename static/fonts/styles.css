@@ -1,0 +1,13 @@
+@font-face {
+  font-family: "Cozette";
+  font-style: normal;
+  font-weight: normal;
+  src: url("/fonts/CozetteVector.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Cozette";
+  font-style: normal;
+  font-weight: bold;
+  src: url("/fonts/CozetteVectorBold.woff2") format("woff2");
+}

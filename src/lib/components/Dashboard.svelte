@@ -7,15 +7,20 @@
       height: number;
     };
     children: Snippet;
+    enhanceText?: boolean;
   }
 
-  let { config, children }: Props = $props();
+  let { config, children, enhanceText = false }: Props = $props();
   let width = $derived.by(() => config.width ?? 800);
   let height = $derived.by(() => config.height ?? 480);
 </script>
 
 <div class="wrapper">
-  <main class="dashboard" style="--width: {width}px; --height: {height}px;">
+  <main
+    class="dashboard"
+    class:enhance-text={enhanceText}
+    style="--width: {width}px; --height: {height}px;"
+  >
     {@render children()}
   </main>
 </div>
@@ -46,23 +51,20 @@
   }
 
   .dashboard {
-    --font-size: 11pt;
-    --font-family: "sans-serif";
-    --line-height: 1.25;
-
     color: black;
     background: white;
-    font-family: var(--font-family);
-    font-weight: var(--font-weight);
-    font-size: var(--font-size);
+    font-family: "sans-serif";
+    font-weight: 400;
+    font-size: 11pt;
     overflow: hidden;
     outline: 1px solid black;
-    paint-order: stroke fill;
     filter: greyscale(1);
 
-    /* Force a text outline on all text for better 1-bit rendering. */
-    -webkit-text-stroke: 0.2px black;
-    -webkit-font-smoothing: none;
+    &.enhance-text {
+      paint-order: stroke fill;
+      -webkit-text-stroke: 0.2px black;
+      -webkit-font-smoothing: none;
+    }
 
     width: var(--width);
     min-width: var(--width);

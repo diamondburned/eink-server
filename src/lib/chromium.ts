@@ -38,6 +38,7 @@ export async function getBrowser(): Promise<Browser> {
         "--disable-translate",
         "--disable-background-networking",
         "--disable-dev-shm-usage",
+        "--disable-font-subpixel-positioning",
         "--no-sandbox",
       ],
     })
