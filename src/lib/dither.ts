@@ -38,5 +38,10 @@ export async function ditherPNG(input: Buffer, cfg: DitheringConfig): Promise<Bu
     }
   }
 
-  return sharp(input).png(pngOpts).toBuffer();
+  let s = sharp(input);
+  if (colors == 2) {
+    s = s.toColorspace("b-w");
+  }
+  s = s.png(pngOpts);
+  return s.toBuffer();
 }

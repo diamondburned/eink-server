@@ -57,7 +57,7 @@
                 class="weather-icon"
                 type="mdi"
                 path={getWeatherIconSVG(data.weather.condition)}
-                size={72}
+                size={80}
               />
               <div class="weather-info">
                 <div class="temperature">
@@ -243,8 +243,7 @@
 <style>
   .container {
     font-family: "Cozette";
-    font-size: 12.75px;
-    letter-spacing: 1;
+    font-size: 13px;
 
     /* Bitmap font tweaks: */
     text-size-adjust: none;
@@ -280,7 +279,7 @@
       border-bottom: 1px solid black;
 
       .time {
-        font-size: 6.5em;
+        font-size: 6em;
         font-weight: bold;
         white-space: norap;
 
@@ -324,7 +323,8 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        justify-content: space-evenly;
+        justify-content: center;
+        gap: 2em;
 
         .weather-info {
           text-align: center;
@@ -342,7 +342,7 @@
         }
 
         .condition {
-          font-size: 1.6em;
+          font-size: 2em;
         }
       }
 

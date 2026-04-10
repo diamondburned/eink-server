@@ -139,7 +139,7 @@ display:
     lambda: |-
       it.image(
         0, 0,
-        id(failing) ? id(error_image) : id(online_dashboard_image),
+        id(online_dashboard_image),
         COLOR_OFF, COLOR_ON
       );
     update_interval: never # unless triggered via on_download_finished

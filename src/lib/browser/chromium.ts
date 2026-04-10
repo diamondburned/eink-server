@@ -1,4 +1,4 @@
-import { chromium, type Browser } from "playwright-core";
+import puppeteer, { type Browser } from "puppeteer-core";
 import { exec as execCallback } from "child_process";
 import { env } from "$env/dynamic/private";
 import util from "util";
@@ -14,17 +14,22 @@ let sharedBrowser: Browser | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
 export async function getBrowser(): Promise<Browser> {
-  if (sharedBrowser && sharedBrowser.isConnected()) {
+  if (sharedBrowser && sharedBrowser.connected) {
     // Reset the idle-close timer on every use.
     resetIdleTimer();
     return sharedBrowser;
   }
 
   const executablePath = await chromiumExecPath();
-  sharedBrowser = await chromium
+  sharedBrowser = await puppeteer
     .launch({
       executablePath,
       headless: true,
+      env: {
+        // Kill off X11 and Wayland display backends to avoid issues.
+        DISPLAY: "",
+        WAYLAND_DISPLAY: "",
+      },
       args: [
         "--bwsi",
         "--incognito",

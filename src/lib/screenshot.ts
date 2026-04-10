@@ -4,7 +4,7 @@ import { env } from "$env/dynamic/private";
 import { join } from "path";
 import { tmpdir } from "os";
 import { ditherPNG } from "./dither.js";
-import { getBrowser } from "./chromium.js";
+import { getBrowser } from "./browser";
 import { hash } from "crypto";
 import type { BaseDashboardConfig } from "./config.js";
 
@@ -64,6 +64,7 @@ export async function takeScreenshot(
   }
 
   const { width, height, screenshot, password } = config;
+  const scale = screenshot.imageScale ?? 1;
   const now = Date.now();
 
   if (screenshot.cachedDurationSec && !force) {
@@ -90,46 +91,51 @@ export async function takeScreenshot(
 
   const browser = await getBrowser();
 
-  const page = await browser.newPage({
-    viewport: { width, height },
-    deviceScaleFactor: screenshot.imageScale ?? 1,
-  });
+  const page = await browser.newPage();
 
-  let png: Buffer | undefined;
+  let png: Buffer;
   try {
+    await page.setViewport({
+      width: width + (browser.firefox ? 12 : 0),
+      height: height + (browser.firefox ? 12 : 0),
+      deviceScaleFactor: scale,
+    });
+
     await page.goto(targetURL.toString(), {
-      waitUntil: "domcontentloaded",
+      waitUntil: ["load", "domcontentloaded"],
       timeout: 10_000,
     });
 
-    await page.waitForSelector("body", { state: "visible" });
+    await page.waitForSelector("body", { visible: true });
+
+    // Inject any custom CSS (filter + extras) before the screenshot.
+    const extraCSS = [
+      screenshot.cssFilter ? `body { filter: ${screenshot.cssFilter}; }` : "",
+      screenshot.cssExtras ?? "",
+    ].join("\n");
+    await page.addStyleTag({ content: extraCSS });
 
     if (screenshot.pageLoadDelaySec) {
       const delayMs = screenshot.pageLoadDelaySec * 1000;
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
 
-    png = await page.screenshot({
+    const raw = await page.screenshot({
       type: "png",
-      clip: { x: 0, y: 0, width, height },
-      scale: screenshot.imageScale ? "device" : "css",
-      style: [
-        screenshot.cssFilter ? `body { filter: ${screenshot.cssFilter}; }` : "",
-        screenshot.cssExtras ?? "",
-      ].join("\n"),
-      animations: "disabled",
+      clip: {
+        x: 0,
+        y: 0,
+        width,
+        height,
+      },
     });
+    png = Buffer.from(raw);
   } finally {
     await page.close();
   }
 
-  if ((screenshot.imageScale ?? 1) != 1) {
-    png = await sharp(png)
-      .resize(width, height, { kernel: sharp.kernel.lanczos3 })
-      .png()
-      .toBuffer();
-  } else {
-    png = Buffer.from(png);
+  if (scale != 1) {
+    png = await sharp(png).resize(width, height, { kernel: sharp.kernel.nearest }).png().toBuffer();
   }
 
   if (screenshot.dithering) {

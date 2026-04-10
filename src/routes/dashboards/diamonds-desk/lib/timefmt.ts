@@ -52,7 +52,6 @@ export function formatEventDuration(event: CalendarEvent): string {
     maximumFractionDigits: 0,
     roundingMode: "ceil",
     unitDisplay: "narrow",
-    listStyle: "narrow",
   });
   return str;
 }

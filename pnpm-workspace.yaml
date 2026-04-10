@@ -1,3 +1,4 @@
 allowBuilds:
   esbuild: true
+  playwright-firefox: true
   sharp: true
