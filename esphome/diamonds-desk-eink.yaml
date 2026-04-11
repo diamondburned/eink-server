@@ -19,7 +19,7 @@ esp32:
   flash_size: 16MB
 
 substitutions:
-  dashboard_url: "http://mizuki.lan:5100/dashboards/diamonds-desk/screenshot.png"
+  dashboard_url: "http://hackadoll3-nixos.lan:49920/dashboards/diamonds-desk/screenshot.png"
   refresh_interval: "5min"
   redraw_every_refreshes: 5
 
