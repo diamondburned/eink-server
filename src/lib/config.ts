@@ -65,7 +65,21 @@ export async function loadDashboardConfig<T extends BaseDashboardConfig = BaseDa
 
   // Automatically check for the dashboard's password field, if any.
   if (checkPassword && resolved.password) {
-    const gotPassword = ev.url.searchParams.get("password");
+    let gotPassword: string | null = null;
+
+    const authHeader = ev.request.headers.get("Authorization");
+    if (authHeader) {
+      if (!authHeader.startsWith("Bearer ")) {
+        error(401, "Bearer token required");
+      }
+      gotPassword = authHeader.replace("Bearer ", "").trim();
+    } else {
+      const passwordURL = ev.url.searchParams.get("password");
+      if (passwordURL) {
+        gotPassword = passwordURL.trim();
+      }
+    }
+
     if (!(await checkDashboardPassword(resolved.password, gotPassword))) {
       error(401, "Wrong dashboard password");
     }
