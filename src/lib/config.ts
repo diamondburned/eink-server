@@ -167,7 +167,8 @@ async function checkDashboardPassword(
     return true;
   }
 
-  return (
-    !!gotPassword && crypto.timingSafeEqual(Buffer.from(wantPassword), Buffer.from(gotPassword))
-  );
+  const minTime = new Promise((resolve) => setTimeout(resolve, 100));
+  const ok = !!gotPassword && wantPassword === gotPassword;
+  await minTime; // Ensure function takes at least X time
+  return ok;
 }
