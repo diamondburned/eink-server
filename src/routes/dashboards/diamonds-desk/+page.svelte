@@ -76,13 +76,11 @@
             </div>
 
             <div class="weather-details">
-              {#if data.weather.precipitation_unit !== undefined}
+              {#if data.weather.precipitation_probability}
                 <div class="detail">
                   <SVGIcon type="mdi" path={mdiWeatherPouring} />
                   <span class="value">
-                    {data.weather.precipitation ?? 0}<span class="unit"
-                      >{data.weather.precipitation_unit}</span
-                    >
+                    {data.weather.precipitation_probability}<span class="unit">%</span>
                   </span>
                 </div>
               {/if}

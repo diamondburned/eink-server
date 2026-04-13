@@ -14,7 +14,7 @@
     "token": {
       "_env": "EINK_HOME_ASSISTANT_TOKEN"
     },
-    "weather": "weather.forecast_home",
+    "weather": "weather.nws_kbfi",
     "calendars": [
       "calendar.diamond",
       "calendar.diamondburned_google_com",

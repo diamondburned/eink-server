@@ -73,7 +73,9 @@ export class HomeAssistantClient {
         body: serviceData ? JSON.stringify(serviceData) : undefined,
       })
       .catch((err) => {
-        throw new Error(`Network error while calling Home Assistant service`, { cause: err });
+        throw new Error(`Network error while calling Home Assistant service: ${err}`, {
+          cause: err,
+        });
       });
 
     if (!response.ok) {

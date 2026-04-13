@@ -3,15 +3,10 @@ import { loadDashboardConfig, type BaseDashboardConfig } from "$lib/config";
 import { error } from "@sveltejs/kit";
 
 import { parseCalendarEvents, type TimelineConfig } from "./lib/calendar";
-import {
-  HomeAssistantClient,
-  currentTimeISO,
-  type WeatherAttributes,
-  type WeatherForecast,
-  type WeatherForecastResponse,
-} from "$lib/homeAssistant";
+import { HomeAssistantClient, currentTimeISO, type WeatherAttributes } from "$lib/homeAssistant";
 import * as e2clicker from "./lib/e2clicker";
 import configRaw from "./config.json";
+import { fetchDailyForecast, type WeatherForecast } from "./lib/weather";
 
 const HOUR = 60 * 60;
 
@@ -36,7 +31,6 @@ export type LoadedData = {
   config: Config;
   weather?: WeatherAttributes & {
     condition: string;
-    forecastHourly?: WeatherForecast[];
     forecastDaily?: WeatherForecast[];
   };
   events?: ReturnType<typeof parseCalendarEvents>;
@@ -102,26 +96,14 @@ export const load: PageServerLoad = async (ev) => {
       ...weatherState.attributes,
     };
 
-    await Promise.all([
-      haClient
-        .callServiceWithResponse<WeatherForecastResponse>("weather", "get_forecasts", {
-          entity_id: config.homeAssistant.weather,
-          type: "hourly",
-        })
-        .then((r) => {
-          data.weather!.forecastHourly =
-            r.service_response?.[config.homeAssistant.weather]?.forecast;
-        }),
-      haClient
-        .callServiceWithResponse<WeatherForecastResponse>("weather", "get_forecasts", {
-          entity_id: config.homeAssistant.weather,
-          type: "daily",
-        })
-        .then((r) => {
-          data.weather!.forecastDaily =
-            r.service_response?.[config.homeAssistant.weather]?.forecast;
-        }),
-    ]);
+    const dailyForecast = await fetchDailyForecast(haClient, config.homeAssistant.weather);
+    data.weather.forecastDaily = dailyForecast;
+
+    if (!data.weather.precipitation_probability && data.weather.forecastDaily) {
+      // This isn't actually a real field. Just take it from today's forecast.
+      data.weather!.precipitation_probability =
+        data.weather!.forecastDaily[0].precipitation_probability;
+    }
   }
 
   if (config.homeAssistant.selfBatteryEntity) {
