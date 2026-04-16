@@ -31,6 +31,7 @@ export async function getNextDoseTime(
       headers: {
         Authorization: `Bearer ${config.token}`,
       },
+      timeout: 3000,
     })
     .then((r) => r.json())
     .catch((err) => {
