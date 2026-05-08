@@ -67,12 +67,13 @@ export async function takeScreenshot(
   const scale = screenshot.imageScale ?? 1;
   const now = Date.now();
 
-  if (screenshot.cachedDurationSec && !force) {
+  const cacheDurationSec = screenshot.cachedDurationSec ?? 60; // default 1min
+  if (cacheDurationSec > 0 && !force) {
     const cachePath = screenshotPathFor(id, config);
     try {
       const fileStat = await stat(cachePath);
       const ageMs = now - fileStat.mtimeMs;
-      if (ageMs < screenshot.cachedDurationSec * 1000) {
+      if (ageMs < cacheDurationSec * 1000) {
         return {
           data: await readFile(cachePath),
           fresh: false,
@@ -142,7 +143,7 @@ export async function takeScreenshot(
     png = await ditherPNG(png, screenshot.dithering);
   }
 
-  if (screenshot.cachedDurationSec) {
+  if (cacheDurationSec) {
     const cachePath = screenshotPathFor(id, config);
     try {
       await mkdir(screenshotsDir(), { recursive: true });
